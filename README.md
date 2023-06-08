@@ -1,4 +1,5 @@
 # k8s
+# Part 1
 
 K8s exam:
 1. Deploy a pod named nginx-pod using the nginx:alpine image.
