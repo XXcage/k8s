@@ -6,16 +6,16 @@ K8s exam:
 Name: nginx-pod-yourname
 Image: nginx:alpine
 ---
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx-pod-rz
-spec:
-  containers:
-  - name: nginx-pod-rz
-    image: nginx:alpine
-    ports:
-    - containerPort: 80
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: nginx-pod-rz
+    spec:
+      containers:
+      - name: nginx-pod-rz
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
 ---
 2. Deploy a messaging pod using the redis:alpine image with the labels set to tier=msg.
 Pod Name: messaging
