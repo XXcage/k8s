@@ -439,21 +439,62 @@ a. Use the below command to create a yaml file.
 i. kubectl create deploy webapp --image=nginx --dry-run -o
 yaml > webapp.yaml
 ii. Edit it and add 5 replica’s
+
+---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: webapp
+      name: webapp
+    spec:
+      #replicas: 1
+      replicas: 6
+      selector:
+        matchLabels:
+          app: webapp
+      strategy: {}
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            app: webapp
+        spec:
+          containers:
+          - image: nginx
+            name: nginx
+            resources: {}
+    status: {}
+---
 2. Get the deployment rollout status
+>kubectl rollout status deployment webapp
 3. Get the replicaset that created with this deployment
+>kubectl get replicaset -l app=webapp
+>kubectl get replicasets.apps webapp
 4. EXPORT the yaml of the replicaset and pods of this deployment
+>kubectl get replicaset -l app=webapp --export=true --output=yaml > webappreplicaset.yaml
+>kubectl get pods -l app=webapp --export=true --output=yaml > webapppods.yaml
 5. Delete the deployment you just created and watch all the pods are
 also being deleted
+>kubectl delete deployment webapp --cascade=true --watch
 6. Create a deployment of webapp with image nginx:1.17.1 with
 container port 80 and verify the image version
 a. kubectl create deploy webapp --image=nginx:1.17.1 --dry-run -o
 yaml > webapp.yaml
 b. add the port section (80) and create the deployment
+>kubectl create deploy webapp --image=nginx:1.17.1 --port=80 --dry-run -o yaml > webapp.yaml
 7. Update the deployment with the image version 1.17.4 and verify
+>kubectl set image deployment/webapp webapp=nginx:1.17.4
+>kubectl rollout status deployment/webapp
 8. Check the rollout history and make sure everything is ok after the
 update
+>kubectl rollout history deployment/webapp
 9. Undo the deployment to the previous version 1.17.1 and verify Image
 has the previous version
+>kubectl rollout undo deployment/webapp
+>kubectl describe deployment webapp | grep -i image
+
 10. Update the deployment with the wrong image version 1.100 and
 verify something is wrong with the deployment
 a. Expect: kubectl get pods (ImagePullErr)
@@ -463,6 +504,15 @@ c. kubectl rollout history deploy webapp --revision=7
 d. Check the history of the specific revision of that deployment
 e. update the deployment with the image version latest and check
 the history and verify nothing is going on
+---
+kubectl set image deployment/webapp webapp=nginx:1.100
+kubectl get pods
+kubectl rollout undo deployment/webapp
+kubectl describe deployment webapp | grep -i image
+kubectl rollout history deploy webapp --revision=7
+kubectl set image deployment/webapp webapp=nginx:latest
+kubectl rollout history deploy webapp
+---
 11. Apply the autoscaling to this deployment with minimum 10 and
 maximum 20 replicas and target CPU of 85% and verify hpa is
 created and replicas are increased to 10 from 1
