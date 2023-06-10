@@ -549,7 +549,9 @@ created and replicas are increased to 10 from 1
 ~~12.~~
 
 13. Clean the cluster by deleting deployment and hpa you just created
+
 >kubectl delete deployments.apps webapp
+
 14.Create a job and make it run 10 times one after one (run > exit > run
 >exit ..) using the following configuration:
 kubectl create job hello-job --image=busybox --dry-run -o yaml --
