@@ -573,17 +573,57 @@ a. Add to the above job completions: 10 inside the yaml
 # Part 4
 # CONFIG MAP:
 1. Create a file called config.txt with two values key1=value1 and
-key2=value2 and verify the file
-cat >> config.txt << EOF
-key1=value1
-key2=value2
-EOF
-cat config.txt
+---
+    key2=value2 and verify the file
+    cat >> config.txt << EOF
+    key1=value1
+    key2=value2
+    EOF
+    cat config.txt
+---
 2. Create a configmap named keyvalcfgmap and read data from the file
 config.txt and verify that configmap is created correctly
+---
+    kubectl create configmap keyvalcfgmap --from-file=config.txt
+    kubectl get configmap keyvalcfgmap -o yaml
+---
+    apiVersion: v1
+    data:
+      config.txt: |
+        key1=value1
+        key2=value2
+    kind: ConfigMap
+    metadata:
+      creationTimestamp: "2023-06-10T04:15:37Z"
+      name: keyvalcfgmap
+      namespace: default
+      resourceVersion: "478521"
+      uid: d0c7f56d-0864-41f2-8421-f189a604c9f7
+---
 3. Create an nginx pod and load environment values from the above
 configmap keyvalcfgmap and exec into the pod and verify the
 environment variables and delete the pod
 // first run this command to save the pod yml
 kubectl run nginx --image=nginx --restart=Never --dry-run -o yaml >
 nginx-pod.yml
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: nginx-pod
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          env:
+            - name: KEY1
+              valueFrom:
+                configMapKeyRef:
+                  name: keyvalcfgmap
+                  key: key1
+            - name: KEY2
+              valueFrom:
+                configMapKeyRef:
+                  name: keyvalcfgmap
+                  key: key2
+---
