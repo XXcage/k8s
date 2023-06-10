@@ -329,8 +329,8 @@ iv. name: beta
         - name: name
           value: beta
 ---
-#Part 2
-#Pod Design Questions:
+# Part 2
+# Pod Design Questions:
 ● Understand how to use Labels, Selectors and Annotations
 ● Understand Deployments and how to perform rolling updates
 ● Understand Deployments and how to perform rollbacks
@@ -431,8 +431,8 @@ node... fix it if it’s not behind scheduled.
 18. Verify the pod nginx that we just created has this label
 >kubectl get pods -l run=nginx
 ---
-#Part 3
-#Deployments:
+# Part 3
+# Deployments:
 
 1. Create a deployment called webapp with image nginx with 5 replicas
 a. Use the below command to create a yaml file.
