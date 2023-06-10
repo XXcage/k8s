@@ -552,10 +552,8 @@ created and replicas are increased to 10 from 1
 
 >kubectl delete deployments.apps webapp
 
-14. Create a job and make it run 10 times one after one (run > exit > run
->exit ..) using the following configuration:
-kubectl create job hello-job --image=busybox --dry-run -o yaml --
-echo "Hello I am from job" > hello-job.yaml”
+14. Create a job and make it run 10 times one after one (run > exit > run >exit ..) using the following configuration:
+kubectl create job hello-job --image=busybox --dry-run -o yaml -- echo "Hello I am from job" > hello-job.yaml”
 a. Add to the above job completions: 10 inside the yaml
 ---
     apiVersion: batch/v1
