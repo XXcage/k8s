@@ -545,14 +545,33 @@ created and replicas are increased to 10 from 1
 >kubectl apply -f hpa.yaml   
 >error: resource mapping not found for name: "webapp-hpa" namespace: "" from "hpa.yaml": no matches for kind "HorizontalPodAutoscalers" in version "autoscaling/v2"   
 >ensure CRDs are installed first   
-12.
+
+~~12.~~
+
 13. Clean the cluster by deleting deployment and hpa you just created
+>kubectl delete deployments.apps webapp
 14.Create a job and make it run 10 times one after one (run > exit > run
 >exit ..) using the following configuration:
 kubectl create job hello-job --image=busybox --dry-run -o yaml --
 echo "Hello I am from job" > hello-job.yaml”
 a. Add to the above job completions: 10 inside the yaml
-CONFIG MAP:
+---
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: hello-job
+    spec:
+      completions: 10
+      template:
+        spec:
+          containers:
+          - name: busybox
+            image: busybox
+            command: ["echo", "Hello I am from job"]
+          restartPolicy: Never
+---
+# Part 4
+# CONFIG MAP:
 1. Create a file called config.txt with two values key1=value1 and
 key2=value2 and verify the file
 cat >> config.txt << EOF
