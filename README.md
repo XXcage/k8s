@@ -142,11 +142,41 @@ a. Volume Name: pv-analytics
 b. Storage: 100Mi
 c. Access modes: ReadWriteMany
 d. Host Path: /pv/data-analytics
+>kubectl create pv pv-analytics --capacity=100Mi --access-modes=ReadWriteMany --host-path=/pv/data-analytics
+---
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: pv-analytics
+    spec:
+      capacity:
+        storage: 100Mi
+      accessModes:
+        - ReadWriteMany
+      hostPath:
+        path: /pv/data-analytics
+---
 11. Create a Pod called redis-storage-yourname with image: redis:alpine with a Volume of
 type emptyDir that lasts for the life of the Pod. specs:.
 a. Pod named 'redis-storage-yourname'
 b. Pod 'redis-storage-yourname' uses Volume type of emptyDir
 c. Pod 'redis-storage-yourname' uses volumeMount with mountPath = /data/redis
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: redis-storage-rz
+    spec:
+      volumes:
+        - name: redis-storage
+          emptyDir: {}
+      containers:
+        - name: redis-container
+          image: redis:alpine
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data/redis
+---
 12. Create this pod and attached it a persistent volume called pv-1
 a. Make sure the PV mountPath is hostbase : /data
 apiVersion: v1
@@ -163,6 +193,25 @@ resources: {}
 dnsPolicy: ClusterFirst
 restartPolicy: Always
 status: {}
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: use-pvspec-rz
+      labels:
+        run: use-pv
+    spec:
+      containers:
+        - name: use-pv
+          image: nginx
+          volumeMounts:
+            - name: pv-1
+              mountPath: /data
+      volumes:
+        - name: pv-1
+          persistentVolumeClaim:
+            claimName: pv-1
+---
 13. Create a new deployment called nginx-deploy, with image nginx:1.16 and 1 replica.
 Record the version. Next upgrade the deployment to version 1.17 using rolling update.
 Make sure that the version upgrade is recorded in the resource annotation.
@@ -170,12 +219,89 @@ a. Deployment : nginx-deploy. Image: nginx:1.16
 b. Image: nginx:1.16
 c. Task: Upgrade the version of the deployment to 1:17
 d. Task: Record the changes for the image upgrade
+---
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx-deploy
+      annotations:
+        kubernetes.io/change-cause: "start deployment at 1.16"
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+            - name: nginx
+              image: nginx:1.16
+              ports:
+                - containerPort: 80
+---
+>kubectl set image deployment/nginx-deploy nginx=nginx:1.17 --record=true --record-annotation="kubernetes.io/change-cause=Upgrade to version 1.17"
 14. Create an nginx pod called nginx-resolver using image nginx, expose it internally with a
 service called nginx-resolver-service. Test that you are able to look up the service and
 pod names from within the cluster. Use the image: busybox:1.28 for dns lookup. Record
 results in /root/nginx-yourname.svc and /root/nginx-yourname.pod
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: nginx-resolver
+      labels:
+        app: nginx-resolver
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: nginx-resolver-service
+    spec:
+      selector:
+        app: nginx-resolver
+      ports:
+      - protocol: TCP
+        port: 80
+        targetPort: 80
+---
+>kubectl run busybox-pod --image=busybox:1.28 --command -- sleep 3600 && \
+kubectl get pod busybox-pod && \
+kubectl exec busybox-pod -- nslookup nginx-resolver-service > /home/bckp/proj4/results/nginx-rz.svc && \
+kubectl exec busybox-pod -- nslookup nginx-resolver > /home/bckp/proj4/results/nginx-rz.pod && \
+---
+>Server:    10.96.0.10
+>Address 1: 10.96.0.10 kube-dns.kube-system.svc.cluster.local
+>Name:      nginx-resolver-service
+>Address 1: 10.101.55.131 nginx-resolver-service.default.svc.cluster.local
+
+>Server:    10.96.0.10
+>Address 1: 10.96.0.10 kube-dns.kube-system.svc.cluster.local
+>nslookup: can't resolve 'nginx-resolver'
+
 15. Create a static pod on node01 called nginx-critical with image nginx. Create this pod on
 node01 and make sure that it is recreated/restarted automatically in case of a failure.
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: nginx-critical
+      namespace: kube-system
+    spec:
+      restartPolicy: Always
+      nodeName: node01
+      containers:
+        - name: nginx
+          image: nginx
+---
+>sudo mv nginx-critical.yaml /etc/kubernetes/manifests/
+
 16. Create a pod called multi-pod with two containers.
 Container 1, name: alpha, image: nginx
 Container 2: beta, image: busybox, command sleep 4800.
@@ -184,15 +310,43 @@ i. container 1:
 ii. name: alpha
 iii. Container 2:
 iv. name: beta
-Pod Design Questions:
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: multi-pod
+    spec:
+      containers:
+      - name: alpha
+        image: nginx
+        env:
+        - name: name
+          value: alpha
+      - name: beta
+        image: busybox
+        command: ["sleep", "4800"]
+        env:
+        - name: name
+          value: beta
+---
+#Part 2
+#Pod Design Questions:
 ● Understand how to use Labels, Selectors and Annotations
 ● Understand Deployments and how to perform rolling updates
 ● Understand Deployments and how to perform rollbacks
 ● Understand Jobs and CronJobs
 1. Type the command for:
 Get pods with label information
+>kubectl get pods --show-labels
 2. Create 5 nginx pods in which two of them is labeled env=prod and
 three of them is labeled env=dev
+---
+    kubectl run nginx-pod-1 --image=nginx --labels=env=prod
+    kubectl run nginx-pod-2 --image=nginx --labels=env=prod
+    kubectl run nginx-pod-3 --image=nginx --labels=env=dev
+    kubectl run nginx-pod-4 --image=nginx --labels=env=dev
+    kubectl run nginx-pod-5 --image=nginx --labels=env=dev
+---
 3. Verify all the pods are created with correct labels
 4. Get the pods with label env=dev
 5. Get the pods with label env=dev and also output the labels
