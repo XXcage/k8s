@@ -341,52 +341,99 @@ Get pods with label information
 2. Create 5 nginx pods in which two of them is labeled env=prod and
 three of them is labeled env=dev
 ---
-    kubectl run nginx-pod-1 --image=nginx --labels=env=prod
-    kubectl run nginx-pod-2 --image=nginx --labels=env=prod
-    kubectl run nginx-pod-3 --image=nginx --labels=env=dev
-    kubectl run nginx-pod-4 --image=nginx --labels=env=dev
-    kubectl run nginx-pod-5 --image=nginx --labels=env=dev
+    kubectl run nginx-prodpod-1 --image=nginx --labels=env=prod
+    kubectl run nginx-prodpod-2 --image=nginx --labels=env=prod
+    kubectl run nginx-devpod-1 --image=nginx --labels=env=dev
+    kubectl run nginx-devpod-2 --image=nginx --labels=env=dev
+    kubectl run nginx-devpod-3 --image=nginx --labels=env=dev
 ---
 3. Verify all the pods are created with correct labels
+>kubectl get pods --show-labels
 4. Get the pods with label env=dev
+>kubectl get pods -l env=dev
 5. Get the pods with label env=dev and also output the labels
+>kubectl get pods -l env=dev --show-labels
 6. Get the pods with label env=prod
+>kubectl get pods -l env=prod
 7. Get the pods with label env=prod and also output the labels
+>kubectl get pods -l env=prod --show-labels
 8. Get the pods with label env
+>kubectl get pods -l env
 9. Get the pods with labels env=dev and env=prod
+>kubectl get pods -l env=dev,env=prod
 10. Get the pods with labels env=dev and env=prod and output the
 labels as well
+>kubectl get pods -l env=dev,env=prod --show-labels
 11. Change the label for one of the pod to env=uat and list all the pods to
 verify
+>kubectl label pod nginx-devpod-1 env=uat --overwrite
+>kubectl get pods --show-labels
+
 12. Remove the labels for the pods that we created now and verify all the
 labels are removed
+---
+    kubectl label pod nginx-prodpod-1 nginx-prodpod-2 nginx-devpod-1 nginx-devpod-2 nginx-devpod-3 env-
+    kubectl get pods --show-labels
+---
 13. Let’s add the label app=nginx for all the pods and verify (using
 kubectl)
+---
+    kubectl label pod nginx-prodpod-1 nginx-prodpod-2 nginx-devpod-1 nginx-devpod-2 nginx-devpod-3 app=nginx
+    kubectl get pods --show-labels
+---
 14.Get all the nodes with labels (if using minikube you would get only
 master node)
+>kubectl get nodes --show-labels
 15. Label the worker node nodeName=nginxnode
+>kubectl label node k8s-node1 nodeName=nginxnode
+---
 16.Create a Pod that will be deployed on the worker node with the label
 nodeName=nginxnode
 Add the nodeSelector to the below and create the pod
-apiVersion: v1
-kind: Pod
-metadata:
-creationTimestamp: null
-labels:
-run: nginx
-name: nginx
-spec:
-containers:
-- image: nginx
-name: nginx
-resources: {}
-dnsPolicy: ClusterFirst
-restartPolicy: Never
-status: {}
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+    creationTimestamp: null
+    labels:
+    run: nginx
+    name: nginx
+    spec:
+    containers:
+    - image: nginx
+    name: nginx
+    resources: {}
+    dnsPolicy: ClusterFirst
+    restartPolicy: Never
+    status: {}
+---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: nginx
+      name: nginx
+    spec:
+      containers:
+        - image: nginx
+          name: nginx
+          resources: {}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      nodeSelector:
+        nodeName: nginxnode
+    status: {}
+---
 17. Verify the pod that it is scheduled with the node selector on the right
 node... fix it if it’s not behind scheduled.
+>kubectl get pods -A -o wide
 18. Verify the pod nginx that we just created has this label
-Deployments:
+>kubectl get pods -l run=nginx
+---
+#Part 3
+#Deployments:
+
 1. Create a deployment called webapp with image nginx with 5 replicas
 a. Use the below command to create a yaml file.
 i. kubectl create deploy webapp --image=nginx --dry-run -o
