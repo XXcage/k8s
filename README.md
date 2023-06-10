@@ -470,11 +470,15 @@ ii. Edit it and add 5 replica’s
 2. Get the deployment rollout status
 >kubectl rollout status deployment webapp
 3. Get the replicaset that created with this deployment
->kubectl get replicaset -l app=webapp
->kubectl get replicasets.apps webapp
+---
+    kubectl get replicaset -l app=webapp
+    kubectl get replicasets.apps webapp
+---
 4. EXPORT the yaml of the replicaset and pods of this deployment
->kubectl get replicaset -l app=webapp --export=true --output=yaml > webappreplicaset.yaml
->kubectl get pods -l app=webapp --export=true --output=yaml > webapppods.yaml
+---
+    kubectl get replicaset -l app=webapp --export=true --output=yaml > webappreplicaset.yaml
+    kubectl get pods -l app=webapp --export=true --output=yaml > webapppods.yaml
+---
 5. Delete the deployment you just created and watch all the pods are
 also being deleted
 >kubectl delete deployment webapp --cascade=true --watch
@@ -485,8 +489,10 @@ yaml > webapp.yaml
 b. add the port section (80) and create the deployment
 >kubectl create deploy webapp --image=nginx:1.17.1 --port=80 --dry-run -o yaml > webapp.yaml
 7. Update the deployment with the image version 1.17.4 and verify
->kubectl set image deployment/webapp webapp=nginx:1.17.4
->kubectl rollout status deployment/webapp
+---
+kubectl set image deployment/webapp nginx=nginx:1.17.4
+kubectl rollout status deployment/webapp
+---
 8. Check the rollout history and make sure everything is ok after the
 update
 >kubectl rollout history deployment/webapp
@@ -505,17 +511,40 @@ d. Check the history of the specific revision of that deployment
 e. update the deployment with the image version latest and check
 the history and verify nothing is going on
 ---
-kubectl set image deployment/webapp webapp=nginx:1.100
-kubectl get pods
-kubectl rollout undo deployment/webapp
-kubectl describe deployment webapp | grep -i image
-kubectl rollout history deploy webapp --revision=7
-kubectl set image deployment/webapp webapp=nginx:latest
-kubectl rollout history deploy webapp
+    kubectl set image deployment/webapp webapp=nginx:1.100
+    kubectl get pods
+    kubectl rollout undo deployment/webapp
+    kubectl describe deployment webapp | grep -i image
+    kubectl rollout history deploy webapp --revision=7
+    kubectl set image deployment/webapp webapp=nginx:latest
+    kubectl rollout history deploy webapp
 ---
 11. Apply the autoscaling to this deployment with minimum 10 and
 maximum 20 replicas and target CPU of 85% and verify hpa is
 created and replicas are increased to 10 from 1
+---
+    apiVersion: autoscaling/v2
+    kind: HorizontalPodAutoscalers
+    metadata:
+      name: webapp-hpa
+    spec:
+      scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: webapp
+      minReplicas: 10
+      maxReplicas: 20
+      metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 85
+---
+>kubectl apply -f hpa.yaml   
+>error: resource mapping not found for name: "webapp-hpa" namespace: "" from "hpa.yaml": no matches for kind "HorizontalPodAutoscalers" in version "autoscaling/v2"   
+>ensure CRDs are installed first   
 12.
 13. Clean the cluster by deleting deployment and hpa you just created
 14.Create a job and make it run 10 times one after one (run > exit > run
